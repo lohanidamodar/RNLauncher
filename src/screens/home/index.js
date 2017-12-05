@@ -10,7 +10,7 @@ class HomeScreen extends React.Component{
     allApps;
     componentWillMount(){
         console.log("All packages", NativeModules.InstalledApps.getApps);
-        console.log("All packages", JSON.parse(NativeModules.InstalledApps.getApps));
+        // console.log("All packages", JSON.parse(NativeModules.InstalledApps.getApps));
         allApps = JSON.parse(NativeModules.InstalledApps.getApps);
         
     }
@@ -28,6 +28,8 @@ class HomeScreen extends React.Component{
             <ScrollView style={styles.container}>
                 {allApps.map((app,i)=>{return(
                     <TouchableOpacity key={i} onPress={()=>this.handleOnPress(app)} style={styles.appListItem}>
+                        
+                        <Image style={styles.icon} resizeMode={'contain'} source={{uri: "data:image/png;base64," + app.icon}} />
                         <Text style={styles.text}>{app.label}</Text>
                     
                     </TouchableOpacity>

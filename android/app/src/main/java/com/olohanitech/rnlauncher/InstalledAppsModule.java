@@ -8,6 +8,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.Callback;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -15,9 +16,12 @@ import java.util.HashMap;
 
 import javax.annotation.Nullable;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-// import android.content.pm.PackageManager;
-import android.content.Intent;
+import android.util.Base64;
 
 
 public class InstalledAppsModule extends ReactContextBaseJavaModule {
@@ -28,8 +32,23 @@ public class InstalledAppsModule extends ReactContextBaseJavaModule {
         CharSequence label;
         CharSequence name;
         Drawable icon;
-        public String toString() { 
-            return "{\"label\":\"" + this.label + "\",\"name\":\"" + this.name + "\",\"icon\":\"" + this.icon + "\"}";
+        public String toString() {
+            Bitmap icon;
+            if(this.icon.getIntrinsicWidth() <= 0 || this.icon.getIntrinsicHeight() <= 0) {
+                icon = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888); // Single color bitmap will be created of 1x1 pixel
+            } else {
+                icon = Bitmap.createBitmap(this.icon.getIntrinsicWidth(), this.icon.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+            }
+            final Canvas canvas = new Canvas(icon);
+            this.icon.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+            this.icon.draw(canvas);
+
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            icon.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);
+            byte[] byteArray = byteArrayOutputStream.toByteArray();
+            String encoded = Base64.encodeToString(byteArray, Base64.NO_WRAP);
+
+            return "{\"label\":\"" + this.label + "\",\"name\":\"" + this.name + "\",\"icon\":\"" + encoded + "\"}";
         }
     }
 
@@ -45,20 +64,11 @@ public class InstalledAppsModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     private String getApps(){
-        // PackageManager manager = this.reactContext.getPackageManager();
-        List<AppDetail> apps = new ArrayList<AppDetail>();
-        
-        // Intent i = new Intent(Intent.ACTION_MAIN, null);
-        // i.addCategory(Intent.CATEGORY_LAUNCHER);
-        
-        // List<ResolveInfo> availableActivities = manager.queryIntentActivities(i, 0);
-        // for(ResolveInfo ri:availableActivities){
-            
-        // }
-
+        List<AppDetail> apps = new ArrayList<>();
         List<PackageInfo> packages = this.reactContext
             .getPackageManager()
             .getInstalledPackages(0);
+
         for(final PackageInfo p: packages){
             if (this.reactContext.getPackageManager().getLaunchIntentForPackage(p.packageName) != null) {
                 AppDetail app = new AppDetail();
